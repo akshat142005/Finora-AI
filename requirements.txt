@@ -1,0 +1,11 @@
+streamlit
+pandas
+numpy
+plotly
+scikit-learn
+openpyxl
+PyMuPDF
+pdfplumber
+mysql-connector-python
+bcrypt
+reportlab

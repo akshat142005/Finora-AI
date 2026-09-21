@@ -1,0 +1,179 @@
+/* =========================================================
+   FINORA AI - GLOBAL UI/UX
+   ========================================================= */
+
+/* Main application */
+.stApp {
+    background: #f7f9fc;
+}
+
+/* Main content */
+.block-container {
+    padding-top: 2rem;
+    padding-bottom: 3rem;
+    max-width: 1400px;
+}
+
+/* =========================================================
+   SIDEBAR
+   ========================================================= */
+
+section[data-testid="stSidebar"] {
+    background: #ffffff;
+    border-right: 1px solid #e5e7eb;
+}
+
+section[data-testid="stSidebar"] .block-container {
+    padding-top: 1.5rem;
+}
+
+/* Sidebar headings */
+section[data-testid="stSidebar"] h1 {
+    font-size: 1.7rem;
+    font-weight: 700;
+}
+
+section[data-testid="stSidebar"] h2,
+section[data-testid="stSidebar"] h3 {
+    font-size: 1rem;
+    font-weight: 650;
+}
+
+/* =========================================================
+   HEADINGS
+   ========================================================= */
+
+h1 {
+    font-weight: 750 !important;
+    letter-spacing: -0.5px;
+}
+
+h2 {
+    font-weight: 700 !important;
+}
+
+h3 {
+    font-weight: 650 !important;
+}
+
+/* =========================================================
+   BUTTONS
+   ========================================================= */
+
+.stButton > button {
+    border-radius: 10px;
+    min-height: 42px;
+    font-weight: 600;
+    border: 1px solid #dfe3e8;
+    transition: all 0.2s ease;
+}
+
+.stButton > button:hover {
+    transform: translateY(-1px);
+}
+
+/* =========================================================
+   METRIC CARDS
+   ========================================================= */
+
+div[data-testid="stMetric"] {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 18px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+div[data-testid="stMetricLabel"] {
+    font-weight: 600;
+}
+
+div[data-testid="stMetricValue"] {
+    font-weight: 750;
+}
+
+/* =========================================================
+   CONTAINERS / CARDS
+   ========================================================= */
+
+div[data-testid="stVerticalBlockBorderWrapper"] {
+    border-radius: 14px;
+    border: 1px solid #e5e7eb;
+}
+
+/* =========================================================
+   INPUTS
+   ========================================================= */
+
+.stTextInput input,
+.stNumberInput input,
+.stSelectbox div[data-baseweb="select"] {
+    border-radius: 9px;
+}
+
+/* =========================================================
+   DATAFRAME
+   ========================================================= */
+
+div[data-testid="stDataFrame"] {
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #e5e7eb;
+}
+
+/* =========================================================
+   ALERTS
+   ========================================================= */
+
+div[data-testid="stAlert"] {
+    border-radius: 10px;
+}
+
+/* =========================================================
+   EXPANDERS
+   ========================================================= */
+
+details {
+    border-radius: 10px !important;
+}
+
+/* =========================================================
+   DIVIDERS
+   ========================================================= */
+
+hr {
+    margin-top: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+/* =========================================================
+   FOOTER
+   ========================================================= */
+
+footer {
+    visibility: hidden;
+}
+
+/* =========================================================
+   MOBILE / SMALL SCREEN
+   ========================================================= */
+
+@media (max-width: 768px) {
+
+    .block-container {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    h1 {
+        font-size: 1.8rem !important;
+    }
+
+    h2 {
+        font-size: 1.4rem !important;
+    }
+
+    div[data-testid="stMetric"] {
+        padding: 12px;
+    }
+}
