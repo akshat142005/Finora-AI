@@ -3,440 +3,398 @@ import pandas as pd
 import numpy as np
 
 
-# =========================================================
-# PAGE TITLE
-# =========================================================
+def show_anomalies():
 
-st.title("⚠️ Anomaly Detection")
+    # =========================================================
+    # PAGE TITLE
+    # =========================================================
 
-st.write(
-    "Finora AI identifies unusually high transactions "
-    "that differ from your normal spending pattern."
-)
-
-
-# =========================================================
-# GET TRANSACTIONS
-# =========================================================
-
-transactions = st.session_state.get(
-    "transactions",
-    None
-)
-
-
-# =========================================================
-# NO DATA
-# =========================================================
-
-if transactions is None or transactions.empty:
-
-    st.info(
-        "📄 Upload a bank statement first to detect "
-        "unusual transactions."
-    )
-
-    st.stop()
-
-
-# =========================================================
-# COPY DATA
-# =========================================================
-
-df = transactions.copy()
-
-
-# =========================================================
-# CHECK REQUIRED COLUMNS
-# =========================================================
-
-required_columns = [
-    "amount",
-    "type"
-]
-
-
-missing_columns = [
-    column
-    for column in required_columns
-    if column not in df.columns
-]
-
-
-if missing_columns:
-
-    st.error(
-        "❌ Required transaction columns are missing."
-    )
+    st.title("⚠️ Anomaly Detection")
 
     st.write(
-        "Missing:",
-        missing_columns
+        "Finora AI identifies unusually high transactions "
+        "that differ from your normal spending pattern."
     )
 
-    st.stop()
+    # =========================================================
+    # GET TRANSACTIONS
+    # =========================================================
 
-
-# =========================================================
-# EXPENSE DATA
-# =========================================================
-
-expenses = df[
-    df["type"] == "Expense"
-].copy()
-
-
-# =========================================================
-# NO EXPENSES
-# =========================================================
-
-if expenses.empty:
-
-    st.info(
-        "No expense transactions are available "
-        "for anomaly detection."
+    transactions = st.session_state.get(
+        "transactions",
+        None
     )
 
-    st.stop()
+    # =========================================================
+    # NO DATA
+    # =========================================================
 
+    if transactions is None or transactions.empty:
 
-# =========================================================
-# PREPARE AMOUNTS
-# =========================================================
+        st.info(
+            "📄 Upload a bank statement first to detect "
+            "unusual transactions."
+        )
 
-expenses["amount"] = pd.to_numeric(
-    expenses["amount"],
-    errors="coerce"
-)
+        return
 
+    # =========================================================
+    # COPY DATA
+    # =========================================================
 
-expenses = expenses.dropna(
-    subset=["amount"]
-)
+    df = transactions.copy()
 
+    # =========================================================
+    # CHECK REQUIRED COLUMNS
+    # =========================================================
 
-# =========================================================
-# ANOMALY DETECTION
-# =========================================================
-#
-# Method:
-# Mean + Standard Deviation
-#
-# A transaction is considered unusual when:
-#
-# amount > mean + 2 * standard deviation
-#
-# This is a simple statistical anomaly detector.
-# =========================================================
-
-mean_amount = expenses[
-    "amount"
-].mean()
-
-
-std_amount = expenses[
-    "amount"
-].std()
-
-
-# If only one transaction exists
-if pd.isna(std_amount):
-
-    std_amount = 0
-
-
-threshold = (
-    mean_amount +
-    (2 * std_amount)
-)
-
-
-# =========================================================
-# CALCULATE ANOMALY SCORE
-# =========================================================
-
-if std_amount > 0:
-
-    expenses["anomaly_score"] = (
-        expenses["amount"] - mean_amount
-    ) / std_amount
-
-else:
-
-    expenses["anomaly_score"] = 0
-
-
-# =========================================================
-# DETECT ANOMALIES
-# =========================================================
-
-anomalies = expenses[
-    expenses["amount"] > threshold
-].copy()
-
-
-# =========================================================
-# HEADER
-# =========================================================
-
-st.header(
-    "🔍 Unusual Transactions"
-)
-
-
-# =========================================================
-# SUMMARY
-# =========================================================
-
-if anomalies.empty:
-
-    st.success(
-        "✅ No unusually high transactions were detected."
-    )
-
-    st.write(
-        "Your recorded expense transactions are "
-        "within the normal range of this analysis."
-    )
-
-else:
-
-    st.warning(
-        f"⚠️ {len(anomalies)} unusual "
-        "transaction(s) detected."
-    )
-
-
-# =========================================================
-# ANOMALY TABLE
-# =========================================================
-
-if not anomalies.empty:
-
-    st.subheader(
-        "📋 Detected Transactions"
-    )
-
-    display_columns = []
-
-    for column in [
-        "date",
-        "merchant",
-        "description",
-        "category",
+    required_columns = [
         "amount",
-        "anomaly_score"
-    ]:
+        "type"
+    ]
 
-        if column in anomalies.columns:
+    missing_columns = [
+        column
+        for column in required_columns
+        if column not in df.columns
+    ]
 
-            display_columns.append(
-                column
-            )
+    if missing_columns:
 
-
-    anomaly_table = anomalies[
-        display_columns
-    ].copy()
-
-
-    # Rename columns
-    rename_map = {
-
-        "date": "Date",
-
-        "merchant": "Merchant",
-
-        "description": "Description",
-
-        "category": "Category",
-
-        "amount": "Amount",
-
-        "anomaly_score": "Anomaly Score"
-
-    }
-
-
-    anomaly_table = anomaly_table.rename(
-        columns=rename_map
-    )
-
-
-    # Format amount
-    if "Amount" in anomaly_table.columns:
-
-        anomaly_table["Amount"] = (
-            anomaly_table["Amount"]
-            .map(
-                lambda x: f"₹{x:,.0f}"
-            )
-        )
-
-
-    # Format score
-    if "Anomaly Score" in anomaly_table.columns:
-
-        anomaly_table["Anomaly Score"] = (
-            anomaly_table["Anomaly Score"]
-            .map(
-                lambda x: f"{x:.2f}"
-            )
-        )
-
-
-    st.dataframe(
-        anomaly_table,
-        use_container_width=True,
-        hide_index=True
-    )
-
-
-# =========================================================
-# AI ALERTS
-# =========================================================
-
-st.header(
-    "🚨 AI Alerts"
-)
-
-
-if anomalies.empty:
-
-    with st.container(border=True):
-
-        st.subheader(
-            "✅ No Critical Alerts"
+        st.error(
+            "❌ Required transaction columns are missing."
         )
 
         st.write(
-            "Finora AI did not detect any unusually "
-            "high expense transactions in the "
-            "available statement data."
+            "Missing:",
+            missing_columns
         )
 
-else:
+        return
 
-    # -----------------------------------------------------
-    # CREATE ALERT FOR EACH ANOMALY
-    # -----------------------------------------------------
+    # =========================================================
+    # EXPENSE DATA
+    # =========================================================
 
-    for _, row in anomalies.iterrows():
+    expenses = df[
+        df["type"] == "Expense"
+    ].copy()
 
-        amount = row["amount"]
+    # =========================================================
+    # NO EXPENSES
+    # =========================================================
 
-        category = row.get(
-            "category",
-            "Unknown"
+    if expenses.empty:
+
+        st.info(
+            "No expense transactions are available "
+            "for anomaly detection."
         )
 
-        merchant = row.get(
+        return
+
+    # =========================================================
+    # PREPARE AMOUNTS
+    # =========================================================
+
+    expenses["amount"] = pd.to_numeric(
+        expenses["amount"],
+        errors="coerce"
+    )
+
+    expenses = expenses.dropna(
+        subset=["amount"]
+    )
+
+    if expenses.empty:
+
+        st.info(
+            "No valid expense amounts are available "
+            "for anomaly detection."
+        )
+
+        return
+
+    # =========================================================
+    # ANOMALY DETECTION
+    # =========================================================
+
+    mean_amount = expenses[
+        "amount"
+    ].mean()
+
+    std_amount = expenses[
+        "amount"
+    ].std()
+
+    if pd.isna(std_amount):
+
+        std_amount = 0
+
+    threshold = (
+        mean_amount +
+        (2 * std_amount)
+    )
+
+    # =========================================================
+    # CALCULATE ANOMALY SCORE
+    # =========================================================
+
+    if std_amount > 0:
+
+        expenses["anomaly_score"] = (
+            expenses["amount"] - mean_amount
+        ) / std_amount
+
+    else:
+
+        expenses["anomaly_score"] = 0
+
+    # =========================================================
+    # DETECT ANOMALIES
+    # =========================================================
+
+    anomalies = expenses[
+        expenses["amount"] > threshold
+    ].copy()
+
+    # =========================================================
+    # HEADER
+    # =========================================================
+
+    st.header(
+        "🔍 Unusual Transactions"
+    )
+
+    # =========================================================
+    # SUMMARY
+    # =========================================================
+
+    if anomalies.empty:
+
+        st.success(
+            "✅ No unusually high transactions were detected."
+        )
+
+        st.write(
+            "Your recorded expense transactions are "
+            "within the normal range of this analysis."
+        )
+
+    else:
+
+        st.warning(
+            f"⚠️ {len(anomalies)} unusual "
+            "transaction(s) detected."
+        )
+
+    # =========================================================
+    # ANOMALY TABLE
+    # =========================================================
+
+    if not anomalies.empty:
+
+        st.subheader(
+            "📋 Detected Transactions"
+        )
+
+        display_columns = []
+
+        for column in [
+            "date",
             "merchant",
-            "Unknown Merchant"
+            "description",
+            "category",
+            "amount",
+            "anomaly_score"
+        ]:
+
+            if column in anomalies.columns:
+
+                display_columns.append(
+                    column
+                )
+
+        anomaly_table = anomalies[
+            display_columns
+        ].copy()
+
+        rename_map = {
+
+            "date": "Date",
+
+            "merchant": "Merchant",
+
+            "description": "Description",
+
+            "category": "Category",
+
+            "amount": "Amount",
+
+            "anomaly_score": "Anomaly Score"
+
+        }
+
+        anomaly_table = anomaly_table.rename(
+            columns=rename_map
         )
 
-        score = row["anomaly_score"]
+        if "Amount" in anomaly_table.columns:
 
+            anomaly_table["Amount"] = (
+                anomaly_table["Amount"]
+                .map(
+                    lambda x: f"₹{x:,.0f}"
+                )
+            )
+
+        if "Anomaly Score" in anomaly_table.columns:
+
+            anomaly_table["Anomaly Score"] = (
+                anomaly_table["Anomaly Score"]
+                .map(
+                    lambda x: f"{x:.2f}"
+                )
+            )
+
+        st.dataframe(
+            anomaly_table,
+            use_container_width=True,
+            hide_index=True
+        )
+
+    # =========================================================
+    # AI ALERTS
+    # =========================================================
+
+    st.header(
+        "🚨 AI Alerts"
+    )
+
+    if anomalies.empty:
 
         with st.container(border=True):
 
             st.subheader(
-                "🚨 Unusual Payment"
+                "✅ No Critical Alerts"
             )
 
             st.write(
-                f"**Merchant:** {merchant}"
+                "Finora AI did not detect any unusually "
+                "high expense transactions in the "
+                "available statement data."
             )
 
-            st.write(
-                f"**Amount:** ₹{amount:,.0f}"
+    else:
+
+        for _, row in anomalies.iterrows():
+
+            amount = row["amount"]
+
+            category = row.get(
+                "category",
+                "Unknown"
             )
 
-            st.write(
-                f"**Category:** {category}"
+            merchant = row.get(
+                "merchant",
+                "Unknown Merchant"
             )
 
-            st.write(
-                f"**Anomaly Score:** {score:.2f}"
-            )
+            score = row["anomaly_score"]
 
-            st.warning(
-                "This transaction is significantly "
-                "higher than the typical expense amount "
-                "in the uploaded statement."
-            )
+            with st.container(border=True):
 
+                st.subheader(
+                    "🚨 Unusual Payment"
+                )
 
-# =========================================================
-# DETECTION DETAILS
-# =========================================================
+                st.write(
+                    f"**Merchant:** {merchant}"
+                )
 
-st.divider()
+                st.write(
+                    f"**Amount:** ₹{amount:,.0f}"
+                )
 
-st.header(
-    "🧠 Detection Details"
-)
+                st.write(
+                    f"**Category:** {category}"
+                )
 
+                st.write(
+                    f"**Anomaly Score:** {score:.2f}"
+                )
 
-col1, col2, col3 = st.columns(3)
+                st.warning(
+                    "This transaction is significantly "
+                    "higher than the typical expense amount "
+                    "in the uploaded statement."
+                )
 
+    # =========================================================
+    # DETECTION DETAILS
+    # =========================================================
 
-with col1:
+    st.divider()
 
-    st.metric(
-        "Average Expense",
-        f"₹{mean_amount:,.0f}"
+    st.header(
+        "🧠 Detection Details"
     )
 
+    col1, col2, col3 = st.columns(3)
 
-with col2:
+    with col1:
 
-    st.metric(
-        "Detection Threshold",
-        f"₹{threshold:,.0f}"
+        st.metric(
+            "Average Expense",
+            f"₹{mean_amount:,.0f}"
+        )
+
+    with col2:
+
+        st.metric(
+            "Detection Threshold",
+            f"₹{threshold:,.0f}"
+        )
+
+    with col3:
+
+        st.metric(
+            "Unusual Transactions",
+            len(anomalies)
+        )
+
+    # =========================================================
+    # EXPLANATION
+    # =========================================================
+
+    with st.expander(
+        "ℹ️ How does Finora AI detect anomalies?"
+    ):
+
+        st.write(
+            "Finora AI compares each expense against "
+            "the average expense and its standard deviation."
+        )
+
+        st.write(
+            "A transaction above the calculated statistical "
+            "threshold is flagged as an unusual transaction."
+        )
+
+        st.write(
+            "This is a statistical indicator and does not "
+            "automatically mean that a transaction is fraudulent."
+        )
+
+    # =========================================================
+    # DISCLAIMER
+    # =========================================================
+
+    st.divider()
+
+    st.caption(
+        "ℹ️ Anomaly detection is based on the transaction "
+        "data available in the uploaded statement. "
+        "An unusual transaction is not necessarily fraudulent."
     )
-
-
-with col3:
-
-    st.metric(
-        "Unusual Transactions",
-        len(anomalies)
-    )
-
-
-# =========================================================
-# EXPLANATION
-# =========================================================
-
-with st.expander(
-    "ℹ️ How does Finora AI detect anomalies?"
-):
-
-    st.write(
-        "Finora AI compares each expense against "
-        "the average expense and its standard deviation."
-    )
-
-    st.write(
-        "A transaction above the calculated statistical "
-        "threshold is flagged as an unusual transaction."
-    )
-
-    st.write(
-        "This is a statistical indicator and does not "
-        "automatically mean that a transaction is fraudulent."
-    )
-
-
-# =========================================================
-# DISCLAIMER
-# =========================================================
-
-st.divider()
-
-st.caption(
-    "ℹ️ Anomaly detection is based on the transaction "
-    "data available in the uploaded statement. "
-    "An unusual transaction is not necessarily fraudulent."
-)
