@@ -16,7 +16,161 @@ def read_csv(file):
 # ============================================================
 
 def read_excel(file):
-    return pd.read_excel(file)
+    """
+    Read Excel bank statements.
+
+    Supports:
+    1. Normal structured Excel statements
+    2. PhonePe multi-sheet statements
+    """
+
+    try:
+        excel = pd.ExcelFile(file)
+        all_transactions = []
+
+        for sheet_name in excel.sheet_names:
+
+            # -------------------------------------------------
+            # Read sheet without assuming a header
+            # -------------------------------------------------
+            raw_df = pd.read_excel(
+                excel,
+                sheet_name=sheet_name,
+                header=None
+            )
+
+            if raw_df.empty:
+                continue
+
+            # -------------------------------------------------
+            # Detect PhonePe transaction rows
+            #
+            # PhonePe format:
+            # Date | Transaction Details | Type | Amount
+            # -------------------------------------------------
+            for _, row in raw_df.iterrows():
+
+                if len(row) < 4:
+                    continue
+
+                date_value = row.iloc[0]
+                description_value = row.iloc[1]
+                type_value = row.iloc[2]
+                amount_value = row.iloc[3]
+
+                # Skip incomplete rows
+                if (
+                    pd.isna(date_value)
+                    or pd.isna(description_value)
+                    or pd.isna(type_value)
+                    or pd.isna(amount_value)
+                ):
+                    continue
+
+                transaction_type = (
+                    str(type_value)
+                    .strip()
+                    .upper()
+                )
+
+                # Only actual transaction rows
+                if transaction_type not in [
+                    "DEBIT",
+                    "CREDIT"
+                ]:
+                    continue
+
+                # -------------------------------------------------
+                # Clean PhonePe date
+                # Example:
+                # "Sep 1 5, 2026"
+                # becomes
+                # "Sep 15, 2026"
+                # -------------------------------------------------
+                date_text = str(
+                    date_value
+                ).strip()
+
+                date_text = re.sub(
+                    r"(?<=\d)\s+(?=\d)",
+                    "",
+                    date_text
+                )
+
+                date_text = re.sub(
+                    r"\s*,\s*",
+                    ", ",
+                    date_text
+                )
+
+                transaction_date = pd.to_datetime(
+                    date_text,
+                    errors="coerce"
+                )
+
+                if pd.isna(transaction_date):
+                    continue
+
+                # -------------------------------------------------
+                # Clean amount
+                # -------------------------------------------------
+                amount = clean_amount(
+                    amount_value
+                )
+
+                if amount <= 0:
+                    continue
+
+                description = (
+                    str(description_value)
+                    .strip()
+                )
+
+                # -------------------------------------------------
+                # Convert DEBIT / CREDIT
+                # -------------------------------------------------
+                debit = 0.0
+                credit = 0.0
+
+                if transaction_type == "DEBIT":
+                    debit = amount
+
+                elif transaction_type == "CREDIT":
+                    credit = amount
+
+                all_transactions.append({
+                    "date": transaction_date,
+                    "description": description,
+                    "debit": debit,
+                    "credit": credit,
+                    "balance": 0.0
+                })
+
+        # -----------------------------------------------------
+        # Return all transactions
+        # -----------------------------------------------------
+        if not all_transactions:
+            return pd.DataFrame(
+                columns=[
+                    "date",
+                    "description",
+                    "debit",
+                    "credit",
+                    "balance"
+                ]
+            )
+
+        return pd.DataFrame(
+            all_transactions
+        )
+
+    except Exception as e:
+
+        print(
+            f"Excel extraction error: {e}"
+        )
+
+        return pd.DataFrame()
 
 
 # ============================================================
